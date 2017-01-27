@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -124,6 +126,7 @@ float train_network_datum_gpu(network net, float *x, float *y)
     return error;
 }
 
+#ifndef WINGPU
 typedef struct {
     network net;
     data d;
@@ -149,6 +152,7 @@ pthread_t train_network_in_thread(network net, data d, float *err)
     if(pthread_create(&thread, 0, train_thread, ptr)) error("Thread creation failed");
     return thread;
 }
+#endif
 
 void pull_updates(layer l)
 {
@@ -299,6 +303,7 @@ void sync_layer(network *nets, int n, int j)
     //printf("Done syncing layer %d\n", j);
 }
 
+#ifndef WINGPU
 typedef struct{
     network *nets;
     int n;
@@ -375,6 +380,8 @@ float train_networks(network *nets, int n, data d, int interval)
     return (float)sum/(n);
 }
 
+#endif
+
 float *get_network_output_layer_gpu(network net, int i)
 {
     layer l = net.layers[i];
@@ -406,3 +413,4 @@ float *network_predict_gpu(network net, float *input)
     return out;
 }
 
+#endif

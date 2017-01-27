@@ -1,11 +1,15 @@
 #ifndef DATA_H
 #define DATA_H
-#include <pthread.h>
 
+#include "pthread.h"
 #include "matrix.h"
 #include "list.h"
 #include "image.h"
 #include "tree.h"
+
+#ifdef _MSC_VER
+#define inline __inline
+#endif
 
 static inline float distance_from_edge(int x, int max)
 {

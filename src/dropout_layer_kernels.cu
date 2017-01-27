@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -39,3 +41,5 @@ void backward_dropout_layer_gpu(dropout_layer layer, network_state state)
     yoloswag420blazeit360noscope<<<cuda_gridsize(size), BLOCK>>>(state.delta, size, layer.rand_gpu, layer.probability, layer.scale);
     check_error(cudaPeekAtLastError());
 }
+
+#endif

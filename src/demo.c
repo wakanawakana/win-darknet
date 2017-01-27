@@ -7,7 +7,14 @@
 #include "box.h"
 #include "image.h"
 #include "demo.h"
+
+#ifdef _MSC_VER
+#include <time.h>
+#include <winsock.h>
+#include <stdint.h>
+#else
 #include <sys/time.h>
+#endif
 
 #define FRAMES 3
 
@@ -69,8 +76,10 @@ void *detect_in_thread(void *ptr)
         error("Last layer must produce detections\n");
     }
     if (nms > 0) do_nms(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-    printf("\033[2J");
+#ifndef _MSC_VER
+	printf("\033[2J");
     printf("\033[1;1H");
+#endif
     printf("\nFPS:%.1f\n",fps);
     printf("Objects:\n\n");
 

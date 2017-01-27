@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -59,3 +61,5 @@ void im2col_ongpu(float *im,
                 stride, height_col,
                 width_col, data_col);
 }
+
+#endif

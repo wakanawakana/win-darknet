@@ -7,6 +7,10 @@
 #include "demo.h"
 #include "option_list.h"
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
 #endif

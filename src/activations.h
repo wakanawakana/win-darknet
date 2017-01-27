@@ -3,6 +3,10 @@
 #include "cuda.h"
 #include "math.h"
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 typedef enum{
     LOGISTIC, RELU, RELIE, LINEAR, RAMP, TANH, PLSE, LEAKY, ELU, LOGGY, STAIR, HARDTAN, LHTAN
 }ACTIVATION;

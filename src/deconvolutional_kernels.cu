@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -107,3 +109,4 @@ extern "C" void update_deconvolutional_layer_gpu(deconvolutional_layer layer, fl
     scal_ongpu(size, momentum, layer.weight_updates_gpu, 1);
 }
 
+#endif

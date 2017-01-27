@@ -32,26 +32,28 @@ layer make_batchnorm_layer(int batch, int w, int h, int c)
     layer.forward = forward_batchnorm_layer;
     layer.backward = backward_batchnorm_layer;
 #ifdef GPU
-    layer.forward_gpu = forward_batchnorm_layer_gpu;
-    layer.backward_gpu = backward_batchnorm_layer_gpu;
+	if (gpu_index >= 0){
+		layer.forward_gpu = forward_batchnorm_layer_gpu;
+		layer.backward_gpu = backward_batchnorm_layer_gpu;
 
-    layer.output_gpu =  cuda_make_array(layer.output, h * w * c * batch);
-    layer.delta_gpu =   cuda_make_array(layer.delta, h * w * c * batch);
+		layer.output_gpu = cuda_make_array(layer.output, h * w * c * batch);
+		layer.delta_gpu = cuda_make_array(layer.delta, h * w * c * batch);
 
-    layer.scales_gpu = cuda_make_array(layer.scales, c);
-    layer.scale_updates_gpu = cuda_make_array(layer.scale_updates, c);
+		layer.scales_gpu = cuda_make_array(layer.scales, c);
+		layer.scale_updates_gpu = cuda_make_array(layer.scale_updates, c);
 
-    layer.mean_gpu = cuda_make_array(layer.mean, c);
-    layer.variance_gpu = cuda_make_array(layer.variance, c);
+		layer.mean_gpu = cuda_make_array(layer.mean, c);
+		layer.variance_gpu = cuda_make_array(layer.variance, c);
 
-    layer.rolling_mean_gpu = cuda_make_array(layer.mean, c);
-    layer.rolling_variance_gpu = cuda_make_array(layer.variance, c);
+		layer.rolling_mean_gpu = cuda_make_array(layer.mean, c);
+		layer.rolling_variance_gpu = cuda_make_array(layer.variance, c);
 
-    layer.mean_delta_gpu = cuda_make_array(layer.mean, c);
-    layer.variance_delta_gpu = cuda_make_array(layer.variance, c);
+		layer.mean_delta_gpu = cuda_make_array(layer.mean, c);
+		layer.variance_delta_gpu = cuda_make_array(layer.variance, c);
 
-    layer.x_gpu = cuda_make_array(layer.output, layer.batch*layer.outputs);
-    layer.x_norm_gpu = cuda_make_array(layer.output, layer.batch*layer.outputs);
+		layer.x_gpu = cuda_make_array(layer.output, layer.batch*layer.outputs);
+		layer.x_norm_gpu = cuda_make_array(layer.output, layer.batch*layer.outputs);
+	}
 #endif
     return layer;
 }

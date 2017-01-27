@@ -8,9 +8,10 @@
 #include "opencv2/highgui/highgui_c.h"
 #endif
 
+#define nind_num 5
 int inverted = 1;
 int noi = 1;
-static const int nind = 5;
+static const int nind = nind_num;
 
 typedef struct {
     char **data;
@@ -364,7 +365,7 @@ int generate_move(network net, int player, float *board, int multi, float thresh
         }
     }
 
-    int indexes[nind];
+	int indexes[nind_num];
     top_k(move, 19*19, nind, indexes);
     if(thresh > move[indexes[0]]) thresh = move[indexes[nind-1]];
 
@@ -637,7 +638,7 @@ void test_go(char *cfg, char *weights, int multi)
             if(board[i]) move[i] = 0;
         }
 
-        int indexes[nind];
+		int indexes[nind_num];
         int row, col;
         top_k(move, 19*19, nind, indexes);
         print_board(board, color, indexes);

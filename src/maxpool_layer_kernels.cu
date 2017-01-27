@@ -1,6 +1,9 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
+#include "math_constants.h"
 
 extern "C" {
 #include "maxpool_layer.h"
@@ -28,7 +31,7 @@ __global__ void forward_maxpool_layer_kernel(int n, int in_h, int in_w, int in_c
     int h_offset = -pad;
 
     int out_index = j + w*(i + h*(k + c*b));
-    float max = -INFINITY;
+    float max = -CUDART_INF_F;
     int max_i = -1;
     int l, m;
     for(l = 0; l < size; ++l){
@@ -38,7 +41,7 @@ __global__ void forward_maxpool_layer_kernel(int n, int in_h, int in_w, int in_c
             int index = cur_w + in_w*(cur_h + in_h*(k + b*in_c));
             int valid = (cur_h >= 0 && cur_h < in_h &&
                     cur_w >= 0 && cur_w < in_w);
-            float val = (valid != 0) ? input[index] : -INFINITY;
+            float val = (valid != 0) ? input[index] : -CUDART_INF_F;
             max_i = (val > max) ? index : max_i;
             max   = (val > max) ? val   : max;
         }
@@ -104,3 +107,4 @@ extern "C" void backward_maxpool_layer_gpu(maxpool_layer layer, network_state st
     check_error(cudaPeekAtLastError());
 }
 
+#endif

@@ -1,6 +1,9 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
+#include "math_constants.h"
 #include <assert.h>
 
 extern "C" {
@@ -736,7 +739,7 @@ __device__ void softmax_device(int n, float *input, float temp, float *output)
 {
     int i;
     float sum = 0;
-    float largest = -INFINITY;
+    float largest = -CUDART_INF_F;
     for(i = 0; i < n; ++i){
         int val = input[i];
         largest = (val>largest) ? val : largest;
@@ -765,3 +768,5 @@ extern "C" void softmax_gpu(float *input, int n, int offset, int groups, float t
     softmax_kernel<<<cuda_gridsize(batch), BLOCK>>>(inputs, offset, batch, input, temp, output);
     check_error(cudaPeekAtLastError());
 }
+
+#endif

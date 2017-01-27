@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -273,3 +275,4 @@ void update_convolutional_layer_gpu(convolutional_layer layer, int batch, float 
 }
 
 
+#endif

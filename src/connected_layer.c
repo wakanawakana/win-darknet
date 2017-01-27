@@ -70,34 +70,36 @@ connected_layer make_connected_layer(int batch, int inputs, int outputs, ACTIVAT
     }
 
 #ifdef GPU
-    l.forward_gpu = forward_connected_layer_gpu;
-    l.backward_gpu = backward_connected_layer_gpu;
-    l.update_gpu = update_connected_layer_gpu;
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_connected_layer_gpu;
+		l.backward_gpu = backward_connected_layer_gpu;
+		l.update_gpu = update_connected_layer_gpu;
 
-    l.weights_gpu = cuda_make_array(l.weights, outputs*inputs);
-    l.biases_gpu = cuda_make_array(l.biases, outputs);
+		l.weights_gpu = cuda_make_array(l.weights, outputs*inputs);
+		l.biases_gpu = cuda_make_array(l.biases, outputs);
 
-    l.weight_updates_gpu = cuda_make_array(l.weight_updates, outputs*inputs);
-    l.bias_updates_gpu = cuda_make_array(l.bias_updates, outputs);
+		l.weight_updates_gpu = cuda_make_array(l.weight_updates, outputs*inputs);
+		l.bias_updates_gpu = cuda_make_array(l.bias_updates, outputs);
 
-    l.output_gpu = cuda_make_array(l.output, outputs*batch);
-    l.delta_gpu = cuda_make_array(l.delta, outputs*batch);
-    if(batch_normalize){
-        l.scales_gpu = cuda_make_array(l.scales, outputs);
-        l.scale_updates_gpu = cuda_make_array(l.scale_updates, outputs);
+		l.output_gpu = cuda_make_array(l.output, outputs*batch);
+		l.delta_gpu = cuda_make_array(l.delta, outputs*batch);
+		if (batch_normalize){
+			l.scales_gpu = cuda_make_array(l.scales, outputs);
+			l.scale_updates_gpu = cuda_make_array(l.scale_updates, outputs);
 
-        l.mean_gpu = cuda_make_array(l.mean, outputs);
-        l.variance_gpu = cuda_make_array(l.variance, outputs);
+			l.mean_gpu = cuda_make_array(l.mean, outputs);
+			l.variance_gpu = cuda_make_array(l.variance, outputs);
 
-        l.rolling_mean_gpu = cuda_make_array(l.mean, outputs);
-        l.rolling_variance_gpu = cuda_make_array(l.variance, outputs);
+			l.rolling_mean_gpu = cuda_make_array(l.mean, outputs);
+			l.rolling_variance_gpu = cuda_make_array(l.variance, outputs);
 
-        l.mean_delta_gpu = cuda_make_array(l.mean, outputs);
-        l.variance_delta_gpu = cuda_make_array(l.variance, outputs);
+			l.mean_delta_gpu = cuda_make_array(l.mean, outputs);
+			l.variance_delta_gpu = cuda_make_array(l.variance, outputs);
 
-        l.x_gpu = cuda_make_array(l.output, l.batch*outputs);
-        l.x_norm_gpu = cuda_make_array(l.output, l.batch*outputs);
-    }
+			l.x_gpu = cuda_make_array(l.output, l.batch*outputs);
+			l.x_norm_gpu = cuda_make_array(l.output, l.batch*outputs);
+		}
+	}
 #endif
     l.activation = activation;
     fprintf(stderr, "connected                            %4d  ->  %4d\n", inputs, outputs);

@@ -4,7 +4,13 @@
 #include "option_list.h"
 #include "blas.h"
 #include "classifier.h"
+#ifdef _MSC_VER
+#include <time.h>
+#include <winsock.h>
+#include <stdint.h>
+#else
 #include <sys/time.h>
+#endif
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
@@ -41,8 +47,10 @@ void demo_art(char *cfgfile, char *weightfile, int cam_index)
 
         float *p = network_predict(net, in_s.data);
 
-        printf("\033[2J");
+#ifndef _MSC_VER
+		printf("\033[2J");
         printf("\033[1;1H");
+#endif
 
         float score = 0;
         for(i = 0; i < n; ++i){

@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -59,3 +61,4 @@ extern "C" void backward_avgpool_layer_gpu(avgpool_layer layer, network_state st
     check_error(cudaPeekAtLastError());
 }
 
+#endif

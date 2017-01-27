@@ -6,7 +6,14 @@
 #include "assert.h"
 #include "classifier.h"
 #include "cuda.h"
+
+#ifdef _MSC_VER
+#include <time.h>
+#include <winsock.h>
+#include <stdint.h>
+#else
 #include <sys/time.h>
+#endif
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
@@ -40,7 +47,9 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     for(i = 0; i < ngpus; ++i){
         srand(seed);
 #ifdef GPU
-        cuda_set_device(gpus[i]);
+		if (gpu_index >= 0){
+			cuda_set_device(gpus[i]);
+		}
 #endif
         nets[i] = parse_network_cfg(cfgfile);
         if(weightfile){
@@ -110,11 +119,14 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 
         float loss = 0;
 #ifdef GPU
-        if(ngpus == 1){
-            loss = train_network(net, train);
-        } else {
-            loss = train_networks(nets, ngpus, train, 4);
-        }
+		if (gpu_index >= 0){
+			if (ngpus == 1){
+				loss = train_network(net, train);
+			}
+			else {
+				loss = train_networks(nets, ngpus, train, 4);
+			}
+		}
 #else
         loss = train_network(net, train);
 #endif
@@ -634,7 +646,9 @@ void try_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filena
             if(l.rolling_mean) printf("%f %f %f\n", l.rolling_mean[i], l.rolling_variance[i], l.scales[i]);
         }
 #ifdef GPU
-        cuda_pull_array(l.output_gpu, l.output, l.outputs);
+		if (gpu_index >= 0){
+			cuda_pull_array(l.output_gpu, l.output, l.outputs);
+		}
 #endif
         for(i = 0; i < l.outputs; ++i){
             printf("%f\n", l.output[i]);

@@ -1,3 +1,5 @@
+#ifdef GPU
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -163,3 +165,5 @@ extern "C" void gradient_array_ongpu(float *x, int n, ACTIVATION a, float *delta
     gradient_array_kernel<<<cuda_gridsize(n), BLOCK>>>(x, n, a, delta);
     check_error(cudaPeekAtLastError());
 }
+
+#endif
