@@ -7,9 +7,13 @@
 * use CUDNN option
 
 *Tested pattern*
-* Win32 (Tested GPU(Cuda6.5) & OPENCV & VS2013）
-* x64 (Tested GPU(Cuda6.5) & OPENCV & VS2013）
-* x64 (Tested GPU(Cuda8.0) & CUDNN & OPENCV & VS2013）
+* Win32 (VS2013）
+* Win32 (OPENCV & VS2013）
+* Win32 (GPU(Cuda6.5) & OPENCV & VS2013）
+* x64 (VS2013）
+* x64 (OPENCV & VS2013）
+* x64 (GPU(Cuda6.5) & OPENCV & VS2013）
+* x64 (GPU(Cuda8.0) & CUDNN & OPENCV & VS2013）
 
 *What Modify*
 * I made it possible to run with only CPU even in GPU build.
