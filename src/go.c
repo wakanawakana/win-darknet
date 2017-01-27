@@ -4,6 +4,11 @@
 #include "option_list.h"
 #include "blas.h"
 
+#ifdef _MSC_VER
+#define popen _popen
+#define pclose _pclose
+#endif
+
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
 #endif
