@@ -15,7 +15,5 @@
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
 "yolov2wgpu.bat" is a test batch of yolov 2
-
 Download the weits file to the TOP hierarchy and use it
-
 Surely predictions images will be generated
