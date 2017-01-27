@@ -14,7 +14,7 @@
 
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
-is a test batch of yolov 2
+"yolov2wgpu.bat" is a test batch of yolov 2
 
 Download the weits file to the TOP hierarchy and use it
 
