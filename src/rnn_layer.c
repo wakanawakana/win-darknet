@@ -19,10 +19,12 @@ static void increment_layer(layer *l, int steps)
     l->x_norm += num;
 
 #ifdef GPU
-    l->output_gpu += num;
-    l->delta_gpu += num;
-    l->x_gpu += num;
-    l->x_norm_gpu += num;
+	if (gpu_index >= 0){
+		l->output_gpu += num;
+		l->delta_gpu += num;
+		l->x_gpu += num;
+		l->x_norm_gpu += num;
+	}
 #endif
 }
 
@@ -62,12 +64,14 @@ layer make_rnn_layer(int batch, int inputs, int hidden, int outputs, int steps, 
     l.backward = backward_rnn_layer;
     l.update = update_rnn_layer;
 #ifdef GPU
-    l.forward_gpu = forward_rnn_layer_gpu;
-    l.backward_gpu = backward_rnn_layer_gpu;
-    l.update_gpu = update_rnn_layer_gpu;
-    l.state_gpu = cuda_make_array(l.state, batch*hidden*(steps+1));
-    l.output_gpu = l.output_layer->output_gpu;
-    l.delta_gpu = l.output_layer->delta_gpu;
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_rnn_layer_gpu;
+		l.backward_gpu = backward_rnn_layer_gpu;
+		l.update_gpu = update_rnn_layer_gpu;
+		l.state_gpu = cuda_make_array(l.state, batch*hidden*(steps + 1));
+		l.output_gpu = l.output_layer->output_gpu;
+		l.delta_gpu = l.output_layer->delta_gpu;
+	}
 #endif
 
     return l;

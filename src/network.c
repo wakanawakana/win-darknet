@@ -136,8 +136,10 @@ network make_network(int n)
     net.layers = calloc(net.n, sizeof(layer));
     net.seen = calloc(1, sizeof(int));
     #ifdef GPU
-    net.input_gpu = calloc(1, sizeof(float *));
-    net.truth_gpu = calloc(1, sizeof(float *));
+	if (gpu_index >= 0){
+		net.input_gpu = calloc(1, sizeof(float *));
+		net.truth_gpu = calloc(1, sizeof(float *));
+	}
     #endif
     return net;
 }
@@ -596,9 +598,11 @@ void free_network(network net)
     }
     free(net.layers);
 #ifdef GPU
-    if(*net.input_gpu) cuda_free(*net.input_gpu);
-    if(*net.truth_gpu) cuda_free(*net.truth_gpu);
-    if(net.input_gpu) free(net.input_gpu);
-    if(net.truth_gpu) free(net.truth_gpu);
+	if (gpu_index >= 0){
+		if (*net.input_gpu) cuda_free(*net.input_gpu);
+		if (*net.truth_gpu) cuda_free(*net.truth_gpu);
+		if (net.input_gpu) free(net.input_gpu);
+		if (net.truth_gpu) free(net.truth_gpu);
+	}
 #endif
 }
