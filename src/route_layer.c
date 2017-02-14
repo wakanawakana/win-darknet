@@ -27,11 +27,13 @@ route_layer make_route_layer(int batch, int n, int *input_layers, int *input_siz
     l.forward = forward_route_layer;
     l.backward = backward_route_layer;
     #ifdef GPU
-    l.forward_gpu = forward_route_layer_gpu;
-    l.backward_gpu = backward_route_layer_gpu;
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_route_layer_gpu;
+		l.backward_gpu = backward_route_layer_gpu;
 
-    l.delta_gpu =  cuda_make_array(l.delta, outputs*batch);
-    l.output_gpu = cuda_make_array(l.output, outputs*batch);
+		l.delta_gpu = cuda_make_array(l.delta, outputs*batch);
+		l.output_gpu = cuda_make_array(l.output, outputs*batch);
+	}
     #endif
     return l;
 }
@@ -62,10 +64,12 @@ void resize_route_layer(route_layer *l, network *net)
     l->output = realloc(l->output, l->outputs*l->batch*sizeof(float));
 
 #ifdef GPU
-    cuda_free(l->output_gpu);
-    cuda_free(l->delta_gpu);
-    l->output_gpu  = cuda_make_array(l->output, l->outputs*l->batch);
-    l->delta_gpu   = cuda_make_array(l->delta,  l->outputs*l->batch);
+	if (gpu_index >= 0){
+		cuda_free(l->output_gpu);
+		cuda_free(l->delta_gpu);
+		l->output_gpu = cuda_make_array(l->output, l->outputs*l->batch);
+		l->delta_gpu = cuda_make_array(l->delta, l->outputs*l->batch);
+	}
 #endif
     
 }

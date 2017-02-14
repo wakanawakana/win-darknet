@@ -36,10 +36,12 @@ layer make_region_layer(int batch, int w, int h, int n, int classes, int coords)
     l.forward = forward_region_layer;
     l.backward = backward_region_layer;
 #ifdef GPU
-    l.forward_gpu = forward_region_layer_gpu;
-    l.backward_gpu = backward_region_layer_gpu;
-    l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
-    l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_region_layer_gpu;
+		l.backward_gpu = backward_region_layer_gpu;
+		l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
+		l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
+	}
 #endif
 
     fprintf(stderr, "detection\n");
@@ -60,11 +62,13 @@ void resize_region_layer(layer *l, int w, int h)
     l->delta = realloc(l->delta, l->batch*l->outputs*sizeof(float));
 
 #ifdef GPU
-    cuda_free(l->delta_gpu);
-    cuda_free(l->output_gpu);
+	if (gpu_index >= 0){
+		cuda_free(l->delta_gpu);
+		cuda_free(l->output_gpu);
 
-    l->delta_gpu =     cuda_make_array(l->delta, l->batch*l->outputs);
-    l->output_gpu =    cuda_make_array(l->output, l->batch*l->outputs);
+		l->delta_gpu = cuda_make_array(l->delta, l->batch*l->outputs);
+		l->output_gpu = cuda_make_array(l->output, l->batch*l->outputs);
+	}
 #endif
 }
 

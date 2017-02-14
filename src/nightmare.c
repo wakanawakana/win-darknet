@@ -54,21 +54,23 @@ void optimize_picture(network *net, image orig, int max_layer, float scale, floa
     network_state state = {0};
 
 #ifdef GPU
-    state.input = cuda_make_array(im.data, im.w*im.h*im.c);
-    state.delta = cuda_make_array(im.data, im.w*im.h*im.c);
+	if (gpu_index >= 0){
+		state.input = cuda_make_array(im.data, im.w*im.h*im.c);
+		state.delta = cuda_make_array(im.data, im.w*im.h*im.c);
 
-    forward_network_gpu(*net, state);
-    copy_ongpu(last.outputs, last.output_gpu, 1, last.delta_gpu, 1);
+		forward_network_gpu(*net, state);
+		copy_ongpu(last.outputs, last.output_gpu, 1, last.delta_gpu, 1);
 
-    cuda_pull_array(last.delta_gpu, last.delta, last.outputs);
-    calculate_loss(last.delta, last.delta, last.outputs, thresh);
-    cuda_push_array(last.delta_gpu, last.delta, last.outputs);
+		cuda_pull_array(last.delta_gpu, last.delta, last.outputs);
+		calculate_loss(last.delta, last.delta, last.outputs, thresh);
+		cuda_push_array(last.delta_gpu, last.delta, last.outputs);
 
-    backward_network_gpu(*net, state);
+		backward_network_gpu(*net, state);
 
-    cuda_pull_array(state.delta, delta.data, im.w*im.h*im.c);
-    cuda_free(state.input);
-    cuda_free(state.delta);
+		cuda_pull_array(state.delta, delta.data, im.w*im.h*im.c);
+		cuda_free(state.input);
+		cuda_free(state.delta);
+	}
 #else
     state.input = im.data;
     state.delta = delta.data;
@@ -143,18 +145,20 @@ void reconstruct_picture(network net, float *features, image recon, image update
 
         network_state state = {0};
 #ifdef GPU
-        state.input = cuda_make_array(recon.data, recon.w*recon.h*recon.c);
-        state.delta = cuda_make_array(delta.data, delta.w*delta.h*delta.c);
-        state.truth = cuda_make_array(features, get_network_output_size(net));
+		if (gpu_index >= 0){
+			state.input = cuda_make_array(recon.data, recon.w*recon.h*recon.c);
+			state.delta = cuda_make_array(delta.data, delta.w*delta.h*delta.c);
+			state.truth = cuda_make_array(features, get_network_output_size(net));
 
-        forward_network_gpu(net, state);
-        backward_network_gpu(net, state);
+			forward_network_gpu(net, state);
+			backward_network_gpu(net, state);
 
-        cuda_pull_array(state.delta, delta.data, delta.w*delta.h*delta.c);
+			cuda_pull_array(state.delta, delta.data, delta.w*delta.h*delta.c);
 
-        cuda_free(state.input);
-        cuda_free(state.delta);
-        cuda_free(state.truth);
+			cuda_free(state.input);
+			cuda_free(state.delta);
+			cuda_free(state.truth);
+		}
 #else
         state.input = recon.data;
         state.delta = delta.data;

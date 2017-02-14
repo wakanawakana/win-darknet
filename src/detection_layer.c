@@ -34,10 +34,12 @@ detection_layer make_detection_layer(int batch, int inputs, int n, int side, int
     l.forward = forward_detection_layer;
     l.backward = backward_detection_layer;
 #ifdef GPU
-    l.forward_gpu = forward_detection_layer_gpu;
-    l.backward_gpu = backward_detection_layer_gpu;
-    l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
-    l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_detection_layer_gpu;
+		l.backward_gpu = backward_detection_layer_gpu;
+		l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
+		l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
+	}
 #endif
 
     fprintf(stderr, "Detection Layer\n");

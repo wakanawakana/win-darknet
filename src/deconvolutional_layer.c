@@ -85,15 +85,17 @@ deconvolutional_layer make_deconvolutional_layer(int batch, int h, int w, int c,
     l.update = update_deconvolutional_layer;
 
     #ifdef GPU
-    l.weights_gpu = cuda_make_array(l.weights, c*n*size*size);
-    l.weight_updates_gpu = cuda_make_array(l.weight_updates, c*n*size*size);
+	if (gpu_index >= 0){
+		l.weights_gpu = cuda_make_array(l.weights, c*n*size*size);
+		l.weight_updates_gpu = cuda_make_array(l.weight_updates, c*n*size*size);
 
-    l.biases_gpu = cuda_make_array(l.biases, n);
-    l.bias_updates_gpu = cuda_make_array(l.bias_updates, n);
+		l.biases_gpu = cuda_make_array(l.biases, n);
+		l.bias_updates_gpu = cuda_make_array(l.bias_updates, n);
 
-    l.col_image_gpu = cuda_make_array(l.col_image, h*w*size*size*n);
-    l.delta_gpu = cuda_make_array(l.delta, l.batch*out_h*out_w*n);
-    l.output_gpu = cuda_make_array(l.output, l.batch*out_h*out_w*n);
+		l.col_image_gpu = cuda_make_array(l.col_image, h*w*size*size*n);
+		l.delta_gpu = cuda_make_array(l.delta, l.batch*out_h*out_w*n);
+		l.output_gpu = cuda_make_array(l.output, l.batch*out_h*out_w*n);
+	}
     #endif
 
     l.activation = activation;
@@ -117,13 +119,15 @@ void resize_deconvolutional_layer(deconvolutional_layer *l, int h, int w)
     l->delta  = realloc(l->delta,
                                 l->batch*out_h * out_w * l->n*sizeof(float));
     #ifdef GPU
-    cuda_free(l->col_image_gpu);
-    cuda_free(l->delta_gpu);
-    cuda_free(l->output_gpu);
+	if (gpu_index >= 0){
+		cuda_free(l->col_image_gpu);
+		cuda_free(l->delta_gpu);
+		cuda_free(l->output_gpu);
 
-    l->col_image_gpu = cuda_make_array(l->col_image, out_h*out_w*l->size*l->size*l->c);
-    l->delta_gpu = cuda_make_array(l->delta, l->batch*out_h*out_w*l->n);
-    l->output_gpu = cuda_make_array(l->output, l->batch*out_h*out_w*l->n);
+		l->col_image_gpu = cuda_make_array(l->col_image, out_h*out_w*l->size*l->size*l->c);
+		l->delta_gpu = cuda_make_array(l->delta, l->batch*out_h*out_w*l->n);
+		l->output_gpu = cuda_make_array(l->output, l->batch*out_h*out_w*l->n);
+	}
     #endif
 }
 

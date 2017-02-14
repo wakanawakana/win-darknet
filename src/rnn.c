@@ -115,15 +115,17 @@ float_pair get_rnn_data(unsigned char *text, size_t *offsets, int characters, si
 
 void reset_rnn_state(network net, int b)
 {
-    int i;
-    for (i = 0; i < net.n; ++i) {
-        #ifdef GPU
-        layer l = net.layers[i];
-        if(l.state_gpu){
-            fill_ongpu(l.outputs, 0, l.state_gpu + l.outputs*b, 1);
-        }
-        #endif
-    }
+	int i;
+	if (gpu_index >= 0){
+		for (i = 0; i < net.n; ++i) {
+#ifdef GPU
+			layer l = net.layers[i];
+			if (l.state_gpu){
+				fill_ongpu(l.outputs, 0, l.state_gpu + l.outputs*b, 1);
+			}
+#endif
+		}
+	}
 }
 
 void train_char_rnn(char *cfgfile, char *weightfile, char *filename, int clear, int tokenized)
@@ -456,7 +458,9 @@ void vec_char_rnn(char *cfgfile, char *weightfile, char *seed)
 
         layer l = net.layers[0];
         #ifdef GPU
-        cuda_pull_array(l.output_gpu, l.output, l.outputs);
+		if (gpu_index >= 0){
+			cuda_pull_array(l.output_gpu, l.output, l.outputs);
+		}
         #endif
         printf("%s", line);
         for(i = 0; i < l.outputs; ++i){

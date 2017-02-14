@@ -19,10 +19,12 @@ static void increment_layer(layer *l, int steps)
     l->x_norm += num;
 
 #ifdef GPU
-    l->output_gpu += num;
-    l->delta_gpu += num;
-    l->x_gpu += num;
-    l->x_norm_gpu += num;
+	if (gpu_index >= 0){
+		l->output_gpu += num;
+		l->delta_gpu += num;
+		l->x_gpu += num;
+		l->x_norm_gpu += num;
+	}
 #endif
 }
 
@@ -90,19 +92,21 @@ layer make_gru_layer(int batch, int inputs, int outputs, int steps, int batch_no
     l.update = update_gru_layer;
 
 #ifdef GPU
-    l.forward_gpu = forward_gru_layer_gpu;
-    l.backward_gpu = backward_gru_layer_gpu;
-    l.update_gpu = update_gru_layer_gpu;
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_gru_layer_gpu;
+		l.backward_gpu = backward_gru_layer_gpu;
+		l.update_gpu = update_gru_layer_gpu;
 
-    l.forgot_state_gpu = cuda_make_array(l.output, batch*outputs);
-    l.forgot_delta_gpu = cuda_make_array(l.output, batch*outputs);
-    l.prev_state_gpu = cuda_make_array(l.output, batch*outputs);
-    l.state_gpu = cuda_make_array(l.output, batch*outputs);
-    l.output_gpu = cuda_make_array(l.output, batch*outputs*steps);
-    l.delta_gpu = cuda_make_array(l.delta, batch*outputs*steps);
-    l.r_gpu = cuda_make_array(l.output_gpu, batch*outputs);
-    l.z_gpu = cuda_make_array(l.output_gpu, batch*outputs);
-    l.h_gpu = cuda_make_array(l.output_gpu, batch*outputs);
+		l.forgot_state_gpu = cuda_make_array(l.output, batch*outputs);
+		l.forgot_delta_gpu = cuda_make_array(l.output, batch*outputs);
+		l.prev_state_gpu = cuda_make_array(l.output, batch*outputs);
+		l.state_gpu = cuda_make_array(l.output, batch*outputs);
+		l.output_gpu = cuda_make_array(l.output, batch*outputs*steps);
+		l.delta_gpu = cuda_make_array(l.delta, batch*outputs*steps);
+		l.r_gpu = cuda_make_array(l.output_gpu, batch*outputs);
+		l.z_gpu = cuda_make_array(l.output_gpu, batch*outputs);
+		l.h_gpu = cuda_make_array(l.output_gpu, batch*outputs);
+	}
 #endif
 
     return l;

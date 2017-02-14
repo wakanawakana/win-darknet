@@ -33,11 +33,13 @@ layer make_reorg_layer(int batch, int w, int h, int c, int stride, int reverse)
     l.forward = forward_reorg_layer;
     l.backward = backward_reorg_layer;
 #ifdef GPU
-    l.forward_gpu = forward_reorg_layer_gpu;
-    l.backward_gpu = backward_reorg_layer_gpu;
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_reorg_layer_gpu;
+		l.backward_gpu = backward_reorg_layer_gpu;
 
-    l.output_gpu  = cuda_make_array(l.output, output_size);
-    l.delta_gpu   = cuda_make_array(l.delta, output_size);
+		l.output_gpu = cuda_make_array(l.output, output_size);
+		l.delta_gpu = cuda_make_array(l.delta, output_size);
+	}
 #endif
     return l;
 }
@@ -68,10 +70,12 @@ void resize_reorg_layer(layer *l, int w, int h)
     l->delta = realloc(l->delta, output_size * sizeof(float));
 
 #ifdef GPU
-    cuda_free(l->output_gpu);
-    cuda_free(l->delta_gpu);
-    l->output_gpu  = cuda_make_array(l->output, output_size);
-    l->delta_gpu   = cuda_make_array(l->delta,  output_size);
+	if (gpu_index >= 0){
+		cuda_free(l->output_gpu);
+		cuda_free(l->delta_gpu);
+		l->output_gpu = cuda_make_array(l->output, output_size);
+		l->delta_gpu = cuda_make_array(l->delta, output_size);
+	}
 #endif
 }
 

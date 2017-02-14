@@ -25,13 +25,15 @@ layer make_normalization_layer(int batch, int w, int h, int c, int size, float a
     layer.forward = forward_normalization_layer;
     layer.backward = backward_normalization_layer;
     #ifdef GPU
-    layer.forward_gpu = forward_normalization_layer_gpu;
-    layer.backward_gpu = backward_normalization_layer_gpu;
+	if (gpu_index >= 0){
+		layer.forward_gpu = forward_normalization_layer_gpu;
+		layer.backward_gpu = backward_normalization_layer_gpu;
 
-    layer.output_gpu =  cuda_make_array(layer.output, h * w * c * batch);
-    layer.delta_gpu =   cuda_make_array(layer.delta, h * w * c * batch);
-    layer.squared_gpu = cuda_make_array(layer.squared, h * w * c * batch);
-    layer.norms_gpu =   cuda_make_array(layer.norms, h * w * c * batch);
+		layer.output_gpu = cuda_make_array(layer.output, h * w * c * batch);
+		layer.delta_gpu = cuda_make_array(layer.delta, h * w * c * batch);
+		layer.squared_gpu = cuda_make_array(layer.squared, h * w * c * batch);
+		layer.norms_gpu = cuda_make_array(layer.norms, h * w * c * batch);
+	}
     #endif
     return layer;
 }
@@ -51,14 +53,16 @@ void resize_normalization_layer(layer *layer, int w, int h)
     layer->squared = realloc(layer->squared, h * w * c * batch * sizeof(float));
     layer->norms = realloc(layer->norms, h * w * c * batch * sizeof(float));
 #ifdef GPU
-    cuda_free(layer->output_gpu);
-    cuda_free(layer->delta_gpu); 
-    cuda_free(layer->squared_gpu); 
-    cuda_free(layer->norms_gpu);   
-    layer->output_gpu =  cuda_make_array(layer->output, h * w * c * batch);
-    layer->delta_gpu =   cuda_make_array(layer->delta, h * w * c * batch);
-    layer->squared_gpu = cuda_make_array(layer->squared, h * w * c * batch);
-    layer->norms_gpu =   cuda_make_array(layer->norms, h * w * c * batch);
+	if (gpu_index >= 0){
+		cuda_free(layer->output_gpu);
+		cuda_free(layer->delta_gpu);
+		cuda_free(layer->squared_gpu);
+		cuda_free(layer->norms_gpu);
+		layer->output_gpu = cuda_make_array(layer->output, h * w * c * batch);
+		layer->delta_gpu = cuda_make_array(layer->delta, h * w * c * batch);
+		layer->squared_gpu = cuda_make_array(layer->squared, h * w * c * batch);
+		layer->norms_gpu = cuda_make_array(layer->norms, h * w * c * batch);
+	}
 #endif
 }
 

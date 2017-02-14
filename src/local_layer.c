@@ -66,20 +66,21 @@ local_layer make_local_layer(int batch, int h, int w, int c, int n, int size, in
     l.update = update_local_layer;
 
 #ifdef GPU
-    l.forward_gpu = forward_local_layer_gpu;
-    l.backward_gpu = backward_local_layer_gpu;
-    l.update_gpu = update_local_layer_gpu;
+	if (gpu_index >= 0){
+		l.forward_gpu = forward_local_layer_gpu;
+		l.backward_gpu = backward_local_layer_gpu;
+		l.update_gpu = update_local_layer_gpu;
 
-    l.weights_gpu = cuda_make_array(l.weights, c*n*size*size*locations);
-    l.weight_updates_gpu = cuda_make_array(l.weight_updates, c*n*size*size*locations);
+		l.weights_gpu = cuda_make_array(l.weights, c*n*size*size*locations);
+		l.weight_updates_gpu = cuda_make_array(l.weight_updates, c*n*size*size*locations);
 
-    l.biases_gpu = cuda_make_array(l.biases, l.outputs);
-    l.bias_updates_gpu = cuda_make_array(l.bias_updates, l.outputs);
+		l.biases_gpu = cuda_make_array(l.biases, l.outputs);
+		l.bias_updates_gpu = cuda_make_array(l.bias_updates, l.outputs);
 
-    l.col_image_gpu = cuda_make_array(l.col_image, out_h*out_w*size*size*c);
-    l.delta_gpu = cuda_make_array(l.delta, l.batch*out_h*out_w*n);
-    l.output_gpu = cuda_make_array(l.output, l.batch*out_h*out_w*n);
-
+		l.col_image_gpu = cuda_make_array(l.col_image, out_h*out_w*size*size*c);
+		l.delta_gpu = cuda_make_array(l.delta, l.batch*out_h*out_w*n);
+		l.output_gpu = cuda_make_array(l.output, l.batch*out_h*out_w*n);
+	}
 #endif
     l.activation = activation;
 
