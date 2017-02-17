@@ -47,9 +47,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     for(i = 0; i < ngpus; ++i){
         srand(seed);
 #ifdef GPU
-		if (gpu_index >= 0){
-			cuda_set_device(gpus[i]);
-		}
+		if (gpu_index >= 0) cuda_set_device(gpus[i]);
 #endif
         nets[i] = parse_network_cfg(cfgfile);
         if(weightfile){
@@ -646,9 +644,7 @@ void try_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filena
             if(l.rolling_mean) printf("%f %f %f\n", l.rolling_mean[i], l.rolling_variance[i], l.scales[i]);
         }
 #ifdef GPU
-		if (gpu_index >= 0){
-			cuda_pull_array(l.output_gpu, l.output, l.outputs);
-		}
+		if (gpu_index >= 0) cuda_pull_array(l.output_gpu, l.output, l.outputs);
 #endif
         for(i = 0; i < l.outputs; ++i){
             printf("%f\n", l.output[i]);

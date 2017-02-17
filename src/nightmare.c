@@ -54,7 +54,7 @@ void optimize_picture(network *net, image orig, int max_layer, float scale, floa
     network_state state = {0};
 
 #ifdef GPU
-	if (gpu_index >= 0){
+	if (net->gpu_index >= 0){
 		state.input = cuda_make_array(im.data, im.w*im.h*im.c);
 		state.delta = cuda_make_array(im.data, im.w*im.h*im.c);
 
@@ -145,7 +145,7 @@ void reconstruct_picture(network net, float *features, image recon, image update
 
         network_state state = {0};
 #ifdef GPU
-		if (gpu_index >= 0){
+		if (net.gpu_index >= 0){
 			state.input = cuda_make_array(recon.data, recon.w*recon.h*recon.c);
 			state.delta = cuda_make_array(delta.data, delta.w*delta.h*delta.c);
 			state.truth = cuda_make_array(features, get_network_output_size(net));

@@ -659,8 +659,10 @@ network parse_network_cfg(char *filename)
             l.output = net.layers[count-1].output;
             l.delta = net.layers[count-1].delta;
 #ifdef GPU
-            l.output_gpu = net.layers[count-1].output_gpu;
-            l.delta_gpu = net.layers[count-1].delta_gpu;
+			if (gpu_index >= 0){
+				l.output_gpu = net.layers[count - 1].output_gpu;
+				l.delta_gpu = net.layers[count - 1].delta_gpu;
+			}
 #endif
         }else{
             fprintf(stderr, "Type not recognized: %s\n", s->type);
@@ -772,9 +774,7 @@ void save_convolutional_weights(layer l, FILE *fp)
         //return;
     }
 #ifdef GPU
-    if(gpu_index >= 0){
-        pull_convolutional_layer(l);
-    }
+    if(gpu_index >= 0) pull_convolutional_layer(l);
 #endif
     int num = l.n*l.c*l.size*l.size;
     fwrite(l.biases, sizeof(float), l.n, fp);
@@ -793,9 +793,7 @@ void save_convolutional_weights(layer l, FILE *fp)
 void save_batchnorm_weights(layer l, FILE *fp)
 {
 #ifdef GPU
-    if(gpu_index >= 0){
-        pull_batchnorm_layer(l);
-    }
+    if(gpu_index >= 0) pull_batchnorm_layer(l);
 #endif
     fwrite(l.scales, sizeof(float), l.c, fp);
     fwrite(l.rolling_mean, sizeof(float), l.c, fp);
@@ -805,9 +803,7 @@ void save_batchnorm_weights(layer l, FILE *fp)
 void save_connected_weights(layer l, FILE *fp)
 {
 #ifdef GPU
-    if(gpu_index >= 0){
-        pull_connected_layer(l);
-    }
+    if(gpu_index >= 0) pull_connected_layer(l);
 #endif
     fwrite(l.biases, sizeof(float), l.outputs, fp);
     fwrite(l.weights, sizeof(float), l.outputs*l.inputs, fp);
@@ -821,9 +817,7 @@ void save_connected_weights(layer l, FILE *fp)
 void save_weights_upto(network net, char *filename, int cutoff)
 {
 #ifdef GPU
-    if(net.gpu_index >= 0){
-        cuda_set_device(net.gpu_index);
-    }
+    if(net.gpu_index >= 0) cuda_set_device(net.gpu_index);
 #endif
     fprintf(stderr, "Saving weights to %s\n", filename);
     FILE *fp = fopen(filename, "wb");
@@ -863,9 +857,7 @@ void save_weights_upto(network net, char *filename, int cutoff)
             save_convolutional_weights(*(l.output_layer), fp);
         } if(l.type == LOCAL){
 #ifdef GPU
-            if(gpu_index >= 0){
-                pull_local_layer(l);
-            }
+            if(net.gpu_index >= 0) pull_local_layer(l);
 #endif
             int locations = l.out_w*l.out_h;
             int size = l.size*l.size*l.c*l.n*locations;
@@ -911,9 +903,7 @@ void load_connected_weights(layer l, FILE *fp, int transpose)
         //printf("rolling_variance: %f mean %f variance\n", mean_array(l.rolling_variance, l.outputs), variance_array(l.rolling_variance, l.outputs));
     }
 #ifdef GPU
-    if(gpu_index >= 0){
-        push_connected_layer(l);
-    }
+    if(gpu_index >= 0) push_connected_layer(l);
 #endif
 }
 
@@ -923,9 +913,7 @@ void load_batchnorm_weights(layer l, FILE *fp)
     fread(l.rolling_mean, sizeof(float), l.c, fp);
     fread(l.rolling_variance, sizeof(float), l.c, fp);
 #ifdef GPU
-    if(gpu_index >= 0){
-        push_batchnorm_layer(l);
-    }
+    if(gpu_index >= 0) push_batchnorm_layer(l);
 #endif
 }
 
@@ -953,9 +941,7 @@ void load_convolutional_weights_binary(layer l, FILE *fp)
         }
     }
 #ifdef GPU
-    if(gpu_index >= 0){
-        push_convolutional_layer(l);
-    }
+    if(gpu_index >= 0) push_convolutional_layer(l);
 #endif
 }
 
@@ -998,9 +984,7 @@ void load_convolutional_weights(layer l, FILE *fp)
     }
     //if (l.binary) binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.weights);
 #ifdef GPU
-    if(gpu_index >= 0){
-        push_convolutional_layer(l);
-    }
+    if(gpu_index >= 0) push_convolutional_layer(l);
 #endif
 }
 
@@ -1008,9 +992,7 @@ void load_convolutional_weights(layer l, FILE *fp)
 void load_weights_upto(network *net, char *filename, int cutoff)
 {
 #ifdef GPU
-    if(net->gpu_index >= 0){
-        cuda_set_device(net->gpu_index);
-    }
+    if(net->gpu_index >= 0) cuda_set_device(net->gpu_index);
 #endif
     fprintf(stderr, "Loading weights from %s...", filename);
     fflush(stdout);
@@ -1063,9 +1045,7 @@ void load_weights_upto(network *net, char *filename, int cutoff)
             fread(l.biases, sizeof(float), l.outputs, fp);
             fread(l.weights, sizeof(float), size, fp);
 #ifdef GPU
-            if(gpu_index >= 0){
-                push_local_layer(l);
-            }
+			if (net->gpu_index >= 0) push_local_layer(l);
 #endif
         }
     }

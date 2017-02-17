@@ -49,19 +49,21 @@ crop_layer make_crop_layer(int batch, int h, int w, int c, int crop_height, int 
 
 void resize_crop_layer(layer *l, int w, int h)
 {
-    l->w = w;
-    l->h = h;
+	l->w = w;
+	l->h = h;
 
-    l->out_w =  l->scale*w;
-    l->out_h =  l->scale*h;
+	l->out_w = l->scale*w;
+	l->out_h = l->scale*h;
 
-    l->inputs = l->w * l->h * l->c;
-    l->outputs = l->out_h * l->out_w * l->out_c;
+	l->inputs = l->w * l->h * l->c;
+	l->outputs = l->out_h * l->out_w * l->out_c;
 
-    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
-    #ifdef GPU
-    cuda_free(l->output_gpu);
-    l->output_gpu = cuda_make_array(l->output, l->outputs*l->batch);
+	l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
+#ifdef GPU
+	if(gpu_index >= 0){
+		cuda_free(l->output_gpu);
+		l->output_gpu = cuda_make_array(l->output, l->outputs*l->batch);
+	}
     #endif
 }
 

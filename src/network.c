@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <time.h>
 #include <assert.h>
 #include "network.h"
@@ -135,12 +135,12 @@ network make_network(int n)
     net.n = n;
     net.layers = calloc(net.n, sizeof(layer));
     net.seen = calloc(1, sizeof(int));
-    #ifdef GPU
-	if (gpu_index >= 0){
-		net.input_gpu = calloc(1, sizeof(float *));
-		net.truth_gpu = calloc(1, sizeof(float *));
-	}
-    #endif
+#ifdef GPU
+    if (gpu_index >= 0){
+        net.input_gpu = calloc(1, sizeof(float *));
+        net.truth_gpu = calloc(1, sizeof(float *));
+    }
+#endif
     return net;
 }
 
@@ -175,7 +175,7 @@ void update_network(network net)
 float *get_network_output(network net)
 {
 #ifdef GPU
-    if (gpu_index >= 0) return get_network_output_gpu(net);
+	if (net.gpu_index >= 0) return get_network_output_gpu(net);
 #endif 
     int i;
     for(i = net.n-1; i > 0; --i) if(net.layers[i].type != COST) break;
@@ -227,7 +227,7 @@ void backward_network(network net, network_state state)
 float train_network_datum(network net, float *x, float *y)
 {
 #ifdef GPU
-    if(gpu_index >= 0) return train_network_datum_gpu(net, x, y);
+	if (net.gpu_index >= 0) return train_network_datum_gpu(net, x, y);
 #endif
     network_state state;
     *net.seen += net.batch;
@@ -324,8 +324,8 @@ void set_batch_network(network *net, int b)
 int resize_network(network *net, int w, int h)
 {
 #ifdef GPU
-    cuda_set_device(net->gpu_index);
-    if(gpu_index >= 0){
+	if (net->gpu_index >= 0){
+		cuda_set_device(net->gpu_index);
         cuda_free(net->workspace);
     }
 #endif
@@ -368,7 +368,7 @@ int resize_network(network *net, int w, int h)
         if(l.type == AVGPOOL) break;
     }
 #ifdef GPU
-    if(gpu_index >= 0){
+	if (net->gpu_index >= 0){
         if(net->input_gpu) {
             cuda_free(*net->input_gpu);
             *net->input_gpu = 0;
@@ -459,7 +459,7 @@ void top_predictions(network net, int k, int *index)
 float *network_predict(network net, float *input)
 {
 #ifdef GPU
-    if(gpu_index >= 0)  return network_predict_gpu(net, input);
+	if (net.gpu_index >= 0)  return network_predict_gpu(net, input);
 #endif
 
     network_state state;
@@ -598,7 +598,7 @@ void free_network(network net)
     }
     free(net.layers);
 #ifdef GPU
-	if (gpu_index >= 0){
+	if (net.gpu_index >= 0){
 		if (*net.input_gpu) cuda_free(*net.input_gpu);
 		if (*net.truth_gpu) cuda_free(*net.truth_gpu);
 		if (net.input_gpu) free(net.input_gpu);
