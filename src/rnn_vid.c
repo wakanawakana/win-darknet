@@ -28,10 +28,10 @@ float_pair get_rnn_vid_data(network net, char **files, int n, int batch, int ste
     for(b = 0; b < batch; ++b){
         int input_size = net.w*net.h*net.c;
         float *input = calloc(input_size*net.batch, sizeof(float));
-        char *filename = files[rand()%n];
+        char *filename = files[rand_r()%n];
         CvCapture *cap = cvCaptureFromFile(filename);
         int frames = cvGetCaptureProperty(cap, CV_CAP_PROP_FRAME_COUNT);
-        int index = rand() % (frames - steps - 2);
+        int index = rand_r() % (frames - steps - 2);
         if (frames < (steps + 4)){
             --b;
             free(input);

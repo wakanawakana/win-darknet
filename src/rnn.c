@@ -193,7 +193,7 @@ void train_char_rnn(char *cfgfile, char *weightfile, char *filename, int clear, 
 
         for(j = 0; j < streams; ++j){
             //printf("%d\n", j);
-            if(rand()%10 == 0){
+            if(rand_r()%10 == 0){
                 //fprintf(stderr, "Reset\n");
                 offsets[j] = rand_size_t()%size;
                 reset_rnn_state(net, j);

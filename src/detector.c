@@ -29,7 +29,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 	network *nets = calloc(ngpus, sizeof(network));
 
 	srand(time(0));
-	int seed = rand();
+	int seed = rand_r();
 	int i;
 	for (i = 0; i < ngpus; ++i){
 		srand(seed);
@@ -84,9 +84,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 	while (get_current_batch(net) < net.max_batches){
 		if (l.random && count++ % 10 == 0){
 			printf("Resizing\n");
-			int dim = (rand() % 10 + 10) * 32;
+			int dim = (rand_r() % 10 + 10) * 32;
 			if (get_current_batch(net) + 200 > net.max_batches) dim = 608;
-			//int dim = (rand() % 4 + 16) * 32;
+			//int dim = (rand_r() % 4 + 16) * 32;
 			printf("%d\n", dim);
 			args.w = dim;
 			args.h = dim;

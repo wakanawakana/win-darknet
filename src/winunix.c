@@ -1,7 +1,11 @@
+#define _CRT_RAND_S
 
 #include <time.h>
 #include <winsock.h>
 #include <stdint.h>
+#include <stdlib.h>  
+#include <stdio.h>  
+#include <limits.h> 
 
 int gettimeofday(struct timeval * tp, struct timezone * tzp)
 {
@@ -37,3 +41,20 @@ void timersub(struct timeval *a, struct timeval *b, struct timeval *res)
 	}
 }
 
+
+extern DWORD main_thread;
+int rand_r(void)
+{
+	int ret;
+	if (main_thread == GetCurrentThreadId())
+	{
+		ret = rand();
+	}
+	else
+	{
+		unsigned int index;
+		rand_s(&index);
+		ret = (unsigned int)((double)index / ((double)UINT_MAX + 1) * RAND_MAX);
+	}
+	return ret;
+}

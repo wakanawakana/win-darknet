@@ -43,7 +43,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     network *nets = calloc(ngpus, sizeof(network));
 
     srand(time(0));
-    int seed = rand();
+	int seed = rand_r();
     for(i = 0; i < ngpus; ++i){
         srand(seed);
 #ifdef GPU

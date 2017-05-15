@@ -142,7 +142,7 @@ void forward_detection_layer(const detection_layer l, network_state state)
                     }
                 }
                 if(l.random && *(state.net.seen) < 64000){
-                    best_index = rand()%l.n;
+                    best_index = rand_r()%l.n;
                 }
 
                 int box_index = index + locations*(l.classes + l.n) + (i*l.n + best_index) * l.coords;

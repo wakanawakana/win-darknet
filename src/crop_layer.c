@@ -73,9 +73,9 @@ void forward_crop_layer(const crop_layer l, network_state state)
     int i,j,c,b,row,col;
     int index;
     int count = 0;
-    int flip = (l.flip && rand()%2);
-    int dh = rand()%(l.h - l.out_h + 1);
-    int dw = rand()%(l.w - l.out_w + 1);
+    int flip = (l.flip && rand_r()%2);
+    int dh = rand_r()%(l.h - l.out_h + 1);
+    int dw = rand_r()%(l.w - l.out_w + 1);
     float scale = 2;
     float trans = -1;
     if(l.noadjust){

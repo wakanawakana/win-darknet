@@ -32,6 +32,11 @@ extern void run_go(int argc, char **argv);
 extern void run_art(int argc, char **argv);
 extern void run_super(int argc, char **argv);
 
+#ifdef _MSC_VER
+#include "windows.h"
+DWORD main_thread;
+#endif
+
 void average(int argc, char *argv[])
 {
     char *cfgfile = argv[2];
@@ -355,6 +360,9 @@ int main(int argc, char **argv)
     //test_resize("data/bad.jpg");
     //test_box();
     //test_convolutional_layer();
+#ifdef _MSC_VER
+	main_thread = GetCurrentThreadId();
+#endif
     if(argc < 2){
         fprintf(stderr, "usage: %s <function>\n", argv[0]);
         return 0;

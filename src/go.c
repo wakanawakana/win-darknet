@@ -99,15 +99,15 @@ void random_go_moves(moves m, float *boards, float *labels, int n)
     int i;
     memset(labels, 0, 19*19*n*sizeof(float));
     for(i = 0; i < n; ++i){
-        char *b = m.data[rand()%m.n];
+        char *b = m.data[rand_r()%m.n];
         int row = b[0];
         int col = b[1];
         labels[col + 19*(row + i*19)] = 1;
         string_to_board(b+2, boards+i*19*19);
         boards[col + 19*(row + i*19)] = 0;
 
-        int flip = rand()%2;
-        int rotate = rand()%4;
+        int flip = rand_r()%2;
+        int rotate = rand_r()%4;
         image in = float_to_image(19, 19, 1, boards+i*19*19);
         image out = float_to_image(19, 19, 1, labels+i*19*19);
         if(flip){

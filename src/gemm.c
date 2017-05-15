@@ -32,7 +32,7 @@ float *random_matrix(int rows, int cols)
     int i;
     float *m = calloc(rows*cols, sizeof(float));
     for(i = 0; i < rows*cols; ++i){
-        m[i] = (float)rand()/RAND_MAX;
+        m[i] = (float)rand_r()/RAND_MAX;
     }
     return m;
 }

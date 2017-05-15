@@ -42,7 +42,7 @@ void shuffle(void *arr, size_t n, size_t size)
     size_t i;
     void *swp = calloc(1, size);
     for(i = 0; i < n-1; ++i){
-        size_t j = i + rand()/(RAND_MAX / (n-i)+1);
+        size_t j = i + rand_r()/(RAND_MAX / (n-i)+1);
 		memcpy(swp, (char*)arr + (j*size), size);
 		memcpy((char*)arr + (j*size), (char*)arr + (i*size), size);
 		memcpy((char*)arr + (i*size), swp, size);
@@ -547,7 +547,7 @@ int rand_int(int min, int max)
         min = max;
         max = s;
     }
-    int r = (rand()%(max - min + 1)) + min;
+    int r = (rand_r()%(max - min + 1)) + min;
     return r;
 }
 
@@ -565,10 +565,10 @@ float rand_normal()
 
     haveSpare = 1;
 
-    rand1 = rand() / ((double) RAND_MAX);
+    rand1 = rand_r() / ((double) RAND_MAX);
     if(rand1 < 1e-100) rand1 = 1e-100;
     rand1 = -2 * log(rand1);
-    rand2 = (rand() / ((double) RAND_MAX)) * TWO_PI;
+    rand2 = (rand_r() / ((double) RAND_MAX)) * TWO_PI;
 
     return sqrt(rand1) * cos(rand2);
 }
@@ -586,14 +586,14 @@ float rand_normal()
 
 size_t rand_size_t()
 {
-    return  ((size_t)(rand()&0xff) << 56) | 
-            ((size_t)(rand()&0xff) << 48) |
-            ((size_t)(rand()&0xff) << 40) |
-            ((size_t)(rand()&0xff) << 32) |
-            ((size_t)(rand()&0xff) << 24) |
-            ((size_t)(rand()&0xff) << 16) |
-            ((size_t)(rand()&0xff) << 8) |
-            ((size_t)(rand()&0xff) << 0);
+    return  ((size_t)(rand_r() & 0xff) << 56) | 
+			((size_t)(rand_r() & 0xff) << 48) |
+			((size_t)(rand_r() & 0xff) << 40) |
+			((size_t)(rand_r() & 0xff) << 32) |
+			((size_t)(rand_r() & 0xff) << 24) |
+			((size_t)(rand_r() & 0xff) << 16) |
+			((size_t)(rand_r() & 0xff) << 8) |
+			((size_t)(rand_r() & 0xff) << 0);
 }
 
 float rand_uniform(float min, float max)
@@ -603,13 +603,13 @@ float rand_uniform(float min, float max)
         min = max;
         max = swap;
     }
-    return ((float)rand()/RAND_MAX * (max - min)) + min;
+	return ((float)rand_r() / RAND_MAX * (max - min)) + min;
 }
 
 float rand_scale(float s)
 {
     float scale = rand_uniform(1, s);
-    if(rand()%2) return scale;
+    if(rand_r()%2) return scale;
     return 1./scale;
 }
 

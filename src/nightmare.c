@@ -37,9 +37,9 @@ void optimize_picture(network *net, image orig, int max_layer, float scale, floa
     //translate_image(orig, -1);
     net->n = max_layer + 1;
 
-    int dx = rand()%16 - 8;
-    int dy = rand()%16 - 8;
-    int flip = rand()%2;
+    int dx = rand_r()%16 - 8;
+    int dy = rand_r()%16 - 8;
+    int flip = rand_r()%2;
 
     image crop = crop_image(orig, dx, dy, orig.w, orig.h);
     image im = resize_image(crop, (int)(orig.w * scale), (int)(orig.h * scale));
@@ -275,8 +275,8 @@ void run_nightmare(int argc, char **argv)
                 cvWaitKey(10);
 #endif
             }else{
-                int layer = max_layer + rand()%range - range/2;
-                int octave = rand()%octaves;
+                int layer = max_layer + rand_r()%range - range/2;
+                int octave = rand_r()%octaves;
                 optimize_picture(&net, im, layer, 1/pow(1.33333333, octave), rate, thresh, norm);
             }
         }

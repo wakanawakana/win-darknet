@@ -94,7 +94,7 @@ matrix hold_out_matrix(matrix *m, int n)
     h.cols = m->cols;
     h.vals = calloc(h.rows, sizeof(float *));
     for(i = 0; i < n; ++i){
-        int index = rand()%m->rows;
+        int index = rand_r()%m->rows;
         h.vals[i] = m->vals[index];
         m->vals[index] = m->vals[--(m->rows)];
     }
