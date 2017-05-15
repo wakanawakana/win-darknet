@@ -45,7 +45,15 @@ char **get_random_paths(char **paths, int n, int m)
     int i;
     pthread_mutex_lock(&mutex);
     for(i = 0; i < n; ++i){
-        int index = rand()%m;
+#ifdef WIN32
+#define _CRT_RAND_S
+		unsigned int index;
+		rand_s(&index);
+		index = (unsigned int)((double)index / ((double)UINT_MAX + 1) * (double)m);
+#else
+		int index = rand() % m;
+#endif
+		printf("%d\n", index);
         random_paths[i] = paths[index];
         //if(i == 0) printf("%s\n", paths[index]);
     }
