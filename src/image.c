@@ -399,7 +399,7 @@ void rgbgr_image(image im)
 }
 
 #ifdef OPENCV
-void show_image_cv(image p, const char *name)
+void show_image_cv(image p, const char *name, CvVideoWriter *out)
 {
     int x,y,k;
     image copy = copy_image(p);
@@ -436,7 +436,12 @@ void show_image_cv(image p, const char *name)
         cvResize(buffer, disp, CV_INTER_LINEAR);
         cvReleaseImage(&buffer);
     }
-    cvShowImage(buff, disp);
+	if (out != NULL){
+		cvWriteFrame(out, disp);
+	}
+	else{
+		cvShowImage(buff, disp);
+	}
     cvReleaseImage(&disp);
 }
 #endif
@@ -444,10 +449,20 @@ void show_image_cv(image p, const char *name)
 void show_image(image p, const char *name)
 {
 #ifdef OPENCV
-    show_image_cv(p, name);
+	show_image_cv(p, name, NULL);
 #else
     fprintf(stderr, "Not compiled with OpenCV, saving to %s.png instead\n", name);
     save_image(p, name);
+#endif
+}
+
+void show_image_write_video(image p, const char *name, CvVideoWriter *out)
+{
+#ifdef OPENCV
+	show_image_cv(p, name, out);
+#else
+	fprintf(stderr, "Not compiled with OpenCV, saving to %s.png instead\n", name);
+	save_image(p, name);
 #endif
 }
 
