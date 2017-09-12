@@ -36,6 +36,7 @@ static image det  ;
 static image det_s;
 static image disp = {0};
 static CvCapture * cap;
+static CvVideoWriter *mwriter;
 static float fps = 0;
 static float demo_thresh = 0;
 static float demo_hier_thresh = .5;
@@ -49,7 +50,8 @@ void *fetch_in_thread(void *ptr)
 {
     in = get_image_from_stream(cap);
     if(!in.data){
-        error("Stream closed.");
+		if (mwriter != NULL) cvReleaseVideoWriter(&mwriter);
+		error("Stream closed.");
     }
     in_s = resize_image(in, net.w, net.h);
     return 0;
@@ -101,7 +103,7 @@ double get_wall_time()
     return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
-void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int frame_skip, char *prefix, float hier_thresh)
+void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int frame_skip, char *prefix, float hier_thresh, const char *outfile)
 {
     //skip = frame_skip;
     image **alphabet = load_alphabet();
@@ -126,6 +128,15 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     }else{
         cap = cvCaptureFromCAM(cam_index);
     }
+	mwriter = NULL;
+	if (outfile){
+		int width = (cvGetCaptureProperty(cap, CV_CAP_PROP_FRAME_WIDTH));
+		int height = (cvGetCaptureProperty(cap, CV_CAP_PROP_FRAME_HEIGHT));
+		double fps = (cvGetCaptureProperty(cap, CV_CAP_PROP_FPS));
+		int forcc = CV_FOURCC('M', 'P', '4', '2');
+//		int forcc = CV_FOURCC('H', '2', '6', '4');
+		mwriter = cvCreateVideoWriter(outfile, forcc, fps, cvSize(width, height), 1);
+	}
 
     if(!cap) error("Couldn't connect to webcam.\n");
 
@@ -177,7 +188,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
             if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
 
             if(!prefix){
-                show_image(disp, "Demo");
+				show_image_write_video(disp, "Demo", mwriter);
                 int c = cvWaitKey(1);
                 if (c == 10){
                     if(frame_skip == 0) frame_skip = 60;
@@ -224,7 +235,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     }
 }
 #else
-void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int frame_skip, char *prefix, float hier_thresh)
+void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int frame_skip, char *prefix, float hier_thresh, const char *outfile)
 {
     fprintf(stderr, "Demo needs OpenCV for webcam images.\n");
 }
