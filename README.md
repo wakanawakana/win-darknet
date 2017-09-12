@@ -18,6 +18,8 @@
 *What Modify*
 * I made it possible to run with only CPU even in GPU build.
 * Implementation of functions missing in Windows.
+* Extended for recall function, Calcutate Precision, Recall, Parameterized threashold, store predict images
+* Extended for demo function, add video writing
 
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
