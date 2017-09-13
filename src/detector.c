@@ -510,8 +510,12 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, fl
 				tp_iou += best_iou;
 			}
 		}
-
-		fprintf(stdout, "   %d %d %d RPs/Img: %.2f IOU: %.2f%% TPIOU:%.2f%% Recall: %.2f%% Precision: %.2f%%\n", i, correct, total, (float)proposals / (i + 1), avg_iou * 100 / total, avg_iou * 100 / correct, 100.*correct / total, 100.*correct / proposals);
+		if (correct > 0){
+			fprintf(stdout, "   %d %d %d RPs/Img: %.2f IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", i, correct, total, (float)proposals / (i + 1), avg_iou * 100 / total, tp_iou * 100 / correct, 100.*correct / total, 100.*correct / proposals);
+		}
+		else {
+			fprintf(stdout, "   %d %d %d RPs/Img: %.2f IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", i, correct, total, (float)proposals / (i + 1), avg_iou * 100 / total, 0.0, 0.0, 0.0);
+		}
         free(id);
         free_image(orig);
         free_image(sized);
