@@ -46,6 +46,7 @@ extern DWORD main_thread;
 int rand_r(void)
 {
 	int ret;
+#ifndef LIBDARKNET
 	if (main_thread == GetCurrentThreadId())
 	{
 		ret = rand();
@@ -56,5 +57,8 @@ int rand_r(void)
 		rand_s(&index);
 		ret = (unsigned int)((double)index / ((double)UINT_MAX + 1) * RAND_MAX);
 	}
+#else
+	ret = rand();
+#endif
 	return ret;
 }
