@@ -741,7 +741,7 @@ __device__ void softmax_device(int n, float *input, float temp, float *output)
     float sum = 0;
     float largest = -CUDART_INF_F;
     for(i = 0; i < n; ++i){
-        int val = input[i];
+        float val = input[i];
         largest = (val>largest) ? val : largest;
     }
     for(i = 0; i < n; ++i){
