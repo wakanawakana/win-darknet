@@ -393,7 +393,7 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
     fprintf(stderr, "Total Detection Time: %f Seconds\n", (double)(time(0) - start));
 }
 
-void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, float thresh, float iou_thresh, int stimg)
+void validate_detector_recall1(char *datacfg, char *cfgfile, char *weightfile, float thresh, float iou_thresh, float nms, int stimg)
 {
 	list *options = read_data_cfg(datacfg);
 	char *recall_images = option_find_str(options, "recall", "data/recall.list");
@@ -419,45 +419,66 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, fl
     int j, j2, k, c;
     box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes, sizeof(float *));
+	float **probs2 = calloc(l.w*l.h*l.n, sizeof(float *));
+	for (j = 0; j < l.w*l.h*l.n; ++j)
+	{
+		probs[j] = calloc(classes, sizeof(float *));
+		probs2[j] = calloc(classes, sizeof(float *));
+		memset(probs2[j], 0, sizeof(float *));
+	}
 
 
     int m = plist->size;
     int i=0;
-
-//    float thresh = .3;
-//    float iou_thresh = .5;
-    float nms = .4;
 
     int total = 0;
     int correct = 0;
     int proposals = 0;
     float avg_iou = 0;
 	float tp_iou = 0;
+	int clsproposals[80];
+	int clstruth[80];
+	int clscorrect[80];
+	float clstpiou[80];
+	float clsaveiou[80];
+	memset(clsproposals, 0, sizeof(clsproposals));
+	memset(clstruth, 0, sizeof(clstruth));
+	memset(clscorrect, 0, sizeof(clscorrect));
+	memset(clstpiou, 0, sizeof(clstpiou));
+	memset(clsaveiou, 0, sizeof(clsaveiou));
 
-    for(i = 0; i < m; ++i){
-        char *path = paths[i];
-        image orig = load_image_color(path, 0, 0);
-        image sized = resize_image(orig, net.w, net.h);
-        char *id = basecfg(path);
-        network_predict(net, sized.data);
-        get_region_boxes(l, 1, 1, thresh, probs, boxes, 0, 0, .5);
+	for (i = 0; i < m; ++i){
+		char *path = paths[i];
+		image orig = load_image_color(path, 0, 0);
+		image orig2 = load_image_color(path, 0, 0);
+		image sized = resize_image(orig, net.w, net.h);
+		char *id = basecfg(path);
+		network_predict(net, sized.data);
+		get_region_boxes(l, 1, 1, thresh, probs, boxes, 0, 0, .5);
 		if (nms) do_nms(boxes, probs, l.w*l.h*l.n, classes, nms);
+//		if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, classes, nms);
 
-        char labelpath[4096];
-        find_replace(path, "images", "labels", labelpath);
-        find_replace(labelpath, "JPEGImages", "labels", labelpath);
+		char labelpath[4096];
+		find_replace(path, "images", "labels", labelpath);
+		find_replace(labelpath, "JPEGImages", "labels", labelpath);
 		find_replace(labelpath, ".bmp", ".txt", labelpath);
 		find_replace(labelpath, ".png", ".txt", labelpath);
 		find_replace(labelpath, ".jpg", ".txt", labelpath);
-        find_replace(labelpath, ".JPEG", ".txt", labelpath);
+		find_replace(labelpath, ".JPEG", ".txt", labelpath);
 
-        int num_labels = 0;
-        box_label *truth = read_boxes(labelpath, &num_labels);
+		int num_labels = 0;
+		int c2prop_old = 0;
+
+		box_label *truth = read_boxes(labelpath, &num_labels);
+		for (j = 0; j < num_labels; j++){
+			++clstruth[truth[j].id];
+		}
+		c2prop_old = clsproposals[2];// cls-0 special
 		for (k = 0; k < l.w*l.h*l.n; ++k){
 			for (c = 0; c < classes; ++c){
 				if (probs[k][c] > thresh){
 					++proposals;
+					++clsproposals[c];
 					float best_iou = 0;
 					int best_j = 0;
 					for (j = 0; j < num_labels; ++j) {
@@ -470,8 +491,10 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, fl
 					}
 					fprintf(stdout, "pb:%d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, best_j, k, c, probs[k][c], best_iou, boxes[k].x, boxes[k].y, boxes[k].w, boxes[k].h);
 				}
-            }
-        }
+			}
+			memset(probs2[k], 0.0f, sizeof(float *));
+		}
+
 		if (stimg > 0){
 			draw_detections(orig, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
 			sprintf(savename, "predictions/%d", i);
@@ -489,7 +512,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, fl
 					for (c = 0; c < classes; ++c){
 						if (probs[k][c] > thresh){
 							float iou = box_iou(boxes[k], t);
-//							fprintf(stdout, "%pb:d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, j, k, c, probs[k][c], iou, boxes[k].x, boxes[k].y, boxes[k].w, boxes[k].h);
+							//							fprintf(stdout, "%pb:d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, j, k, c, probs[k][c], iou, boxes[k].x, boxes[k].y, boxes[k].w, boxes[k].h);
 							if (iou > best_iou){
 								best_iou = iou;
 								best_k = k;
@@ -500,17 +523,33 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, fl
 					}
 				}
 			}
-			if (best_k >= 0){
-//				fprintf(stdout, "   %d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, best_j, best_k, best_c, probs[best_k][best_c], best_iou, boxes[best_k].x, boxes[best_k].y, boxes[best_k].w, boxes[best_k].h);
-				probs[best_k][best_c] = 0.0;
-			}
+
 			avg_iou += best_iou;
-			if (best_iou > iou_thresh && best_c == truth[j2].id){
+			clsaveiou[best_c] += best_iou;
+
+			if (best_iou > iou_thresh && best_c == truth[best_j].id){
 				++correct;
+				++clscorrect[best_c];
+
+				clstpiou[best_c] += best_iou;
 				tp_iou += best_iou;
 			}
+			if (best_k >= 0){
+				//					fprintf(stdout, "   %d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, best_j, best_k, best_c, probs[best_k][best_c], best_iou, boxes[best_k].x, boxes[best_k].y, boxes[best_k].w, boxes[best_k].h);
+				probs[best_k][best_c] = 0.0;
+			}
 		}
+
+		if (stimg > 0){
+			draw_detections(orig2, l.w*l.h*l.n, thresh, boxes, probs2, names, alphabet, l.classes);
+			sprintf(savename, "predictions/%d- all and tip", i);
+			save_image(orig2, savename);
+		}
+
 		if (correct > 0){
+			for (j = 0; j < 3; j++){
+				fprintf(stdout, "   c-%d %d %d IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", j, clscorrect[j], clsproposals[j], clsaveiou[j] * 100 / clstruth[j], clstpiou[j] * 100 / clscorrect[j], 100.*clscorrect[j] / clstruth[j], 100.*clscorrect[j] / clsproposals[j]);
+			}
 			fprintf(stdout, "   %d %d %d RPs/Img: %.2f IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", i, correct, total, (float)proposals / (i + 1), avg_iou * 100 / total, tp_iou * 100 / correct, 100.*correct / total, 100.*correct / proposals);
 		}
 		else {
@@ -520,6 +559,218 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile, fl
         free_image(orig);
         free_image(sized);
     }
+}
+
+void validate_detector_recall2(char *datacfg, char *cfgfile, char *weightfile, float thresh, float iou_thresh, float nms, int stimg)
+{
+	list *options = read_data_cfg(datacfg);
+	char *recall_images = option_find_str(options, "recall", "data/recall.list");
+	network net = parse_network_cfg(cfgfile);
+	layer l = net.layers[net.n - 1];
+	int classes = l.classes;
+	char savename[255];
+	char *name_list = option_find_str(options, "names", "data/names.list");
+	char **names = get_labels(name_list);
+	image **alphabet = load_alphabet();
+
+	if (weightfile){
+		load_weights(&net, weightfile);
+	}
+	set_batch_network(&net, 1);
+	fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
+	srand(time(0));
+
+	list *plist = get_paths(recall_images);
+	//    list *plist = get_paths("data/voc.2007.test");
+	char **paths = (char **)list_to_array(plist);
+
+	int j, j2, k, c;
+	box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+	float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
+	float **probs2 = calloc(l.w*l.h*l.n, sizeof(float *));
+	for (j = 0; j < l.w*l.h*l.n; ++j)
+	{
+		probs[j] = calloc(classes, sizeof(float *));
+		probs2[j] = calloc(classes, sizeof(float *));
+		memset(probs2[j], 0, sizeof(float *));
+	}
+
+
+	int m = plist->size;
+	int i = 0;
+
+	int total = 0;
+	int correct = 0;
+	int proposals = 0;
+	float avg_iou = 0;
+	float tp_iou = 0;
+	int clsproposals[80];
+	int clstruth[80];
+	int clscorrect[80];
+	int cls2table[10]; // cls-0 special
+	float clstpiou[80];
+	float clsaveiou[80];
+	memset(clsproposals, 0, sizeof(clsproposals));
+	memset(clstruth, 0, sizeof(clstruth));
+	memset(clscorrect, 0, sizeof(clscorrect));
+	memset(clstpiou, 0, sizeof(clstpiou));
+	memset(clsaveiou, 0, sizeof(clsaveiou));
+
+	for (i = 0; i < m; ++i){
+		char *path = paths[i];
+		image orig = load_image_color(path, 0, 0);
+		image orig2 = load_image_color(path, 0, 0);
+		image sized = resize_image(orig, net.w, net.h);
+		char *id = basecfg(path);
+		network_predict(net, sized.data);
+		get_region_boxes(l, 1, 1, thresh, probs, boxes, 0, 0, .5);
+		if (nms) do_nms(boxes, probs, l.w*l.h*l.n, classes, nms);
+		//		if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, classes, nms);
+
+		char labelpath[4096];
+		find_replace(path, "images", "labels", labelpath);
+		find_replace(labelpath, "JPEGImages", "labels", labelpath);
+		find_replace(labelpath, ".bmp", ".txt", labelpath);
+		find_replace(labelpath, ".png", ".txt", labelpath);
+		find_replace(labelpath, ".jpg", ".txt", labelpath);
+		find_replace(labelpath, ".JPEG", ".txt", labelpath);
+
+		int num_labels = 0;
+		int c2prop_old = 0;
+
+		box_label *truth = read_boxes(labelpath, &num_labels);
+		for (j = 0; j < num_labels; j++){
+			++clstruth[truth[j].id];
+		}
+		c2prop_old = clsproposals[2];// cls-0 special
+		for (k = 0; k < l.w*l.h*l.n; ++k){
+			for (c = 0; c < classes; ++c){
+				if (probs[k][c] > thresh){
+					++proposals;
+					++clsproposals[c];
+					float best_iou = 0;
+					int best_j = 0;
+					for (j = 0; j < num_labels; ++j) {
+						box t = { truth[j].x, truth[j].y, truth[j].w, truth[j].h };
+						float iou = box_iou(boxes[k], t);
+						if (iou > best_iou){
+							best_iou = iou;
+							best_j = j;
+						}
+					}
+					if (c == 2){ // cls-0 special
+						cls2table[clsproposals[2] - 1 - c2prop_old] = k; // cls-0 special
+					}
+					fprintf(stdout, "pb:%d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, best_j, k, c, probs[k][c], best_iou, boxes[k].x, boxes[k].y, boxes[k].w, boxes[k].h);
+				}
+			}
+			memset(probs2[k], 0.0f, sizeof(float *));
+		}
+
+		clstruth[0] = clstruth[1]; // cls-0 special
+
+		for (j2 = 0; j2 < clsproposals[2] - c2prop_old; j2++){
+			float best_iou = 0;
+			int best_k = -1;
+			for (k = 0; k < l.w*l.h*l.n; ++k){
+				if (probs[k][1] > thresh){
+					float iou = box_iou(boxes[k], boxes[cls2table[j2]]);
+					if (iou > best_iou && probs2[k][1] == 0.0f){
+						best_k = k;
+						best_iou = iou;
+					}
+				}
+			}
+			if (best_k >= 0){
+				probs2[best_k][1] = probs[best_k][1];
+				best_iou = 0;
+				clsproposals[0]++;
+				for (j = 0; j < num_labels; ++j) {
+					box t = { truth[j].x, truth[j].y, truth[j].w, truth[j].h };
+					if (probs[best_k][1] > thresh){
+						float iou = box_iou(boxes[best_k], t);
+						if (iou > best_iou){
+							best_iou = iou;
+						}
+					}
+				}
+				clsaveiou[0] += best_iou;
+				if (best_iou > iou_thresh){
+					clscorrect[0]++;
+					clstpiou[0] += best_iou;
+				}
+			}
+		}
+
+		if (stimg > 0){
+			draw_detections(orig, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
+			sprintf(savename, "predictions/%d", i);
+			save_image(orig, savename);
+		}
+		for (j2 = 0; j2 < num_labels; ++j2) {
+			++total;
+			float best_iou = 0;
+			int best_k = -1;
+			int best_c = 0;
+			int best_j = 0;
+			for (j = 0; j < num_labels; ++j) {
+				box t = { truth[j].x, truth[j].y, truth[j].w, truth[j].h };
+				for (k = 0; k < l.w*l.h*l.n; ++k){
+					for (c = 0; c < classes; ++c){
+						if (probs[k][c] > thresh){
+							float iou = box_iou(boxes[k], t);
+							//							fprintf(stdout, "%pb:d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, j, k, c, probs[k][c], iou, boxes[k].x, boxes[k].y, boxes[k].w, boxes[k].h);
+							if (iou > best_iou){
+								best_iou = iou;
+								best_k = k;
+								best_c = c;
+								best_j = j;
+							}
+						}
+					}
+				}
+			}
+
+			avg_iou += best_iou;
+			clsaveiou[best_c] += best_iou;
+			if (best_c == 1){// cls-0 special
+				//				clsaveiou[0] += best_iou;
+			}
+			if (best_iou > iou_thresh && best_c == truth[best_j].id){
+				++correct;
+				++clscorrect[best_c];
+				if (best_c == 1){// cls-0 special
+					//					++clscorrect[0];
+					//					clstpiou[0] += best_iou;
+				}
+				clstpiou[best_c] += best_iou;
+				tp_iou += best_iou;
+			}
+			if (best_k >= 0){
+				//					fprintf(stdout, "   %d-%d-%d %d %f, %f, %f, %f, %f, %f\n", i, best_j, best_k, best_c, probs[best_k][best_c], best_iou, boxes[best_k].x, boxes[best_k].y, boxes[best_k].w, boxes[best_k].h);
+				probs[best_k][best_c] = 0.0;
+			}
+		}
+
+		if (stimg > 0){
+			draw_detections(orig2, l.w*l.h*l.n, thresh, boxes, probs2, names, alphabet, l.classes);
+			sprintf(savename, "predictions/%d- all and tip", i);
+			save_image(orig2, savename);
+		}
+
+		if (correct > 0){
+			for (j = 0; j < 3; j++){
+				fprintf(stdout, "   c-%d %d %d IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", j, clscorrect[j], clsproposals[j], clsaveiou[j] * 100 / clstruth[j], clstpiou[j] * 100 / clscorrect[j], 100.*clscorrect[j] / clstruth[j], 100.*clscorrect[j] / clsproposals[j]);
+			}
+			fprintf(stdout, "   %d %d %d RPs/Img: %.2f IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", i, correct, total, (float)proposals / (i + 1), avg_iou * 100 / total, tp_iou * 100 / correct, 100.*correct / total, 100.*correct / proposals);
+		}
+		else {
+			fprintf(stdout, "   %d %d %d RPs/Img: %.2f IOU: %.2f%% TPIOU: %.2f%% Recall: %.2f%% Precision: %.2f%%\n", i, correct, total, (float)proposals / (i + 1), avg_iou * 100 / total, 0.0, 0.0, 0.0);
+		}
+		free(id);
+		free_image(orig);
+		free_image(sized);
+	}
 }
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh)
@@ -581,16 +832,253 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     }
 }
 
+box get_region_box2(float *x, float *biases, int n, int index, int i, int j, int w, int h)
+{
+	box b;
+	b.x = (i + logistic_activate(x[index + 0])) / w;
+	b.y = (j + logistic_activate(x[index + 1])) / h;
+	b.w = exp(x[index + 2]) * biases[2 * n] / w;
+	b.h = exp(x[index + 3]) * biases[2 * n + 1] / h;
+	return b;
+}
+
+void one_hot(network net, network_state state, int clsid)
+{
+	int i, j, n, b, t;
+	layer l = net.layers[net.n - 1];
+	float *predictions = l.output;
+	int size = l.coords + l.classes + 1;
+
+	int locations = l.side*l.side;
+	for (i = 0; i < l.w*l.h; ++i){
+		for (n = 0; n < l.n; ++n){
+			int index = i*l.n + n;
+			int p_index = index * (l.classes + 5) + 4;
+			float scale = predictions[p_index];
+			int class_index = index * (l.classes + 5) + 5;
+			for (j = 0; j < l.classes; ++j){
+				if (clsid == j){
+					predictions[class_index + j] = 1.0f / scale;
+				}
+				else{
+					predictions[class_index + j] = 0;
+				}
+			}
+		}
+	}
+
+	memset(l.delta, 0, l.outputs * l.batch * sizeof(float));
+	float avg_iou = 0;
+	float recall = 0;
+	float avg_cat = 0;
+	float avg_obj = 0;
+	float avg_anyobj = 0;
+	int count = 0;
+	int class_count = 0;
+	*(l.cost) = 0;
+
+	for (b = 0; b < l.batch; ++b) {
+		for (j = 0; j < l.h; ++j) {
+			for (i = 0; i < l.w; ++i) {
+				for (n = 0; n < l.n; ++n) {
+					int index = size*(j*l.w*l.n + i*l.n + n) + b*l.outputs;
+					box pred = get_region_box2(l.output, l.biases, n, index, i, j, l.w, l.h);
+					float best_iou = 0;
+					for (t = 0; t < 30; ++t){
+						box truth = float_to_box(state.truth + t * 5 + b*l.truths);
+						if (!truth.x) break;
+						float iou = box_iou(pred, truth);
+						if (iou > best_iou) {
+							best_iou = iou;
+						}
+					}
+					avg_anyobj += l.output[index + 4];
+					l.delta[index + 4] = l.noobject_scale * ((0 - l.output[index + 4]) * logistic_gradient(l.output[index + 4]));
+					if (best_iou > l.thresh) {
+						l.delta[index + 4] = 0;
+					}
+
+			//		if (*(state.net.seen) < 12800){
+			//			box truth = { 0 };
+			//			truth.x = (i + .5) / l.w;
+			//			truth.y = (j + .5) / l.h;
+			//			truth.w = l.biases[2 * n] / l.w;
+			//			truth.h = l.biases[2 * n + 1] / l.h;
+			//			delta_region_box(truth, l.output, l.biases, n, index, i, j, l.w, l.h, l.delta, .01);
+			//		}
+				}
+			}
+		}
+	}
+
+
+	if (gpu_index > 0){
+		cuda_push_array(l.delta_gpu, l.delta, l.batch*l.outputs);
+	}
+}
+
+image grad_image(network net)
+{
+	layer l = net.layers[8];
+	image im = make_image(416, 416, 1);
+	int size, i, j;
+	float *out, *grads, *weights, *cam, maxfind;
+	size = l.h*l.w*l.n;
+	out = calloc(size, sizeof(float));
+	grads = calloc(size, sizeof(float));
+	cam = calloc(size, sizeof(float));
+	if (gpu_index > 0){
+		cuda_pull_array(l.output_gpu, out, size);
+		cuda_pull_array(l.delta_gpu, grads, size);
+		cuda_pull_array(l.mean_delta_gpu, grads, l.n);
+	}
+	else{
+		out = l.output;
+		grads = l.mean_delta;
+	}
+	for (i = 0; i < l.n; i++){
+		for (j = 0; j < l.h*l.w; j++){
+			int index = i*l.h*l.w + j;
+			cam[index] = out[index] *grads[i];
+		}
+	}
+	maxfind = 0;
+	for (j = 0; j < l.h*l.w*l.n; j++){
+		if (cam[j] > maxfind){
+			maxfind = cam[j];
+		}
+	}
+	for (j = 0; j < l.h*l.w*l.n; j++){
+		cam[j] = fmax(cam[j], 0) / maxfind * 255;
+	}
+
+
+	memcpy(im.data, cam, size > 416 * 416 ? 416 * 416 * sizeof(float) : size * sizeof(float));
+	show_image(im, "cam");
+	return im;
+}
+
+float* take_output(network net)
+{
+	layer l = net.layers[8];
+	int size = l.h*l.w*l.n;
+	float* out = calloc(size, sizeof(float));
+	if (gpu_index > 0){
+		cuda_pull_array(l.output_gpu, out, size);
+	}
+	else{
+		memcpy(out, l.output, size * sizeof(float));
+	}
+	return out;
+}
+
+
+
+void grad_cam_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh)
+{
+	list *options = read_data_cfg(datacfg);
+	char *name_list = option_find_str(options, "names", "data/names.list");
+	char **names = get_labels(name_list);
+
+	image **alphabet = load_alphabet();
+	network net = parse_network_cfg(cfgfile);
+	if (weightfile){
+		load_weights(&net, weightfile);
+	}
+	set_batch_network(&net, 1);
+	srand(2222222);
+	clock_t time;
+	char buff[256];
+	char *input = buff;
+	int j;
+	float nms = .4;
+	while (1){
+		if (filename){
+			strncpy(input, filename, 256);
+		}
+		else {
+			printf("Enter Image Path: ");
+			fflush(stdout);
+			input = fgets(input, 256, stdin);
+			if (!input) return;
+			strtok(input, "\n");
+		}
+		image im = load_image_color(input, 0, 0);
+		image sized = resize_image(im, net.w, net.h);
+		layer l = net.layers[net.n - 1];
+
+		box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+		float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
+		for (j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
+
+		float *X = sized.data;
+		float *out;
+		time = clock();
+
+
+		network_state state;
+		state.net = net;
+		state.index = 0;
+		state.truth = calloc(30, sizeof(float));
+		state.train = 1;
+		state.delta = 0;
+		state.truth[0] = 0.674556;
+		state.truth[1] = 0.707407;
+		state.truth[2] = 0.088757;
+		state.truth[3] = 0.111111;
+		gpu_index = -1;
+		if (gpu_index > 0){
+			cuda_set_device(net.gpu_index);
+			int size = get_network_input_size(net) * net.batch;
+			state.input = cuda_make_array(X, size);
+			network_predict(net, X);
+		}else{
+			state.net = net;
+			state.input = X;
+			network_predict(net, X);
+//			out = get_network_output(net);
+		}
+
+//		take_output(net);
+		printf("%s: Predicted in %f seconds.\n", input, sec(clock() - time));
+		get_region_boxes(l, 1, 1, thresh, probs, boxes, 0, 0, hier_thresh);
+		if (l.softmax_tree && nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+		else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+		draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
+		save_image(im, "predictions");
+		show_image(im, "predictions");
+
+		one_hot(net, state, 1);
+		if (gpu_index > 0){
+			backward_network_gpu(net, state);
+		}else{
+			backward_network(net, state);
+		}
+		image gim = grad_image(net);
+		free_image(im);
+		free_image(sized);
+		free(boxes);
+		free_ptrs((void **)probs, l.w*l.h*l.n);
+#ifdef OPENCV
+		cvWaitKey(0);
+		cvDestroyAllWindows();
+#endif
+		if (filename) break;
+	}
+}
+
+
 void run_detector(int argc, char **argv)
 {
     char *prefix = find_char_arg(argc, argv, "-prefix", 0);
     float thresh = find_float_arg(argc, argv, "-thresh", .24);
 	float iouth = find_float_arg(argc, argv, "-iouth", .5);
 	float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
+	float nms = find_float_arg(argc, argv, "-nms", 0.4);
 	int stimg = find_int_arg(argc, argv, "-stimg", 0);
 	int cam_index = find_int_arg(argc, argv, "-c", 0);
     int frame_skip = find_int_arg(argc, argv, "-s", 0);
-    if(argc < 4){
+	if (argc < 4){
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }
@@ -627,8 +1115,9 @@ void run_detector(int argc, char **argv)
     if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh);
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
-	else if (0 == strcmp(argv[2], "recall")) validate_detector_recall(datacfg, cfg, weights, thresh, iouth, stimg);
-    else if(0==strcmp(argv[2], "demo")) {
+	else if (0 == strcmp(argv[2], "recall")) validate_detector_recall1(datacfg, cfg, weights, thresh, iouth, nms, stimg);
+	else if (0 == strcmp(argv[2], "recall2")) validate_detector_recall2(datacfg, cfg, weights, thresh, iouth, nms, stimg);
+	else if (0 == strcmp(argv[2], "demo")) {
         list *options = read_data_cfg(datacfg);
         int classes = option_find_int(options, "classes", 20);
         char *name_list = option_find_str(options, "names", "data/names.list");
@@ -636,3 +1125,4 @@ void run_detector(int argc, char **argv)
 		demo(cfg, weights, thresh, cam_index, filename, names, classes, frame_skip, prefix, hier_thresh, outfile);
     }
 }
+
