@@ -374,14 +374,18 @@ maxpool_layer parse_maxpool(list *options, size_params params)
 
 avgpool_layer parse_avgpool(list *options, size_params params)
 {
-    int batch,w,h,c;
+	int stride = option_find_int(options, "stride", 1);
+	int size = option_find_int(options, "size", stride);
+	int padding = option_find_int_quiet(options, "padding", (size - 1) / 2);
+	
+	int batch, w, h, c;
     w = params.w;
     h = params.h;
     c = params.c;
     batch=params.batch;
     if(!(h && w && c)) error("Layer before avgpool layer must output image.");
 
-    avgpool_layer layer = make_avgpool_layer(batch,w,h,c);
+	avgpool_layer layer = make_avgpool_layer(batch, w, h, c, size, stride, padding);
     return layer;
 }
 
