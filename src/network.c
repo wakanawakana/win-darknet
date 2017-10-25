@@ -230,7 +230,7 @@ float train_network_datum(network net, float *x, float *y)
 	if (net.gpu_index >= 0) return train_network_datum_gpu(net, x, y);
 #endif
     network_state state;
-    *net.seen += net.batch;
+    *net.seen += net.batch; /* 何バッチ目か */
     state.index = 0;
     state.net = net;
     state.input = x;
